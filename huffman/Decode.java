@@ -62,6 +62,46 @@ class Decode{
   }
 
 
+  static String decodeString(byte[] input, char[] tree){
+    int index = 2 * input[0] + 1;
+    String output = "";
+    int mask = (1 << 7);
+    int tree_index = 0;
+    while (index < input.length){
+      byte b = input[index];
+      for(int i = 0; i < 8; i++){
+        if( (((b & mask) >> 7) & 1) == 0 ){
+          tree_index = 2 * tree_index + 1;
+        }
+        else{
+          tree_index = 2 * tree_index + 2;
+        }
+        if(tree[tree_index] != '\0'){
+          output = output + tree[tree_index];
+          System.out.println("ADDED TO STRING: " + output);
+          tree_index = 0;
+        }
+        b = (byte)(b << 1);
+      }
+      index++;
+    }
+    return output;
+  }
+
+
+  static void write(String filename, String decodedString){
+    try {
+      PrintWriter output = new PrintWriter(filename);
+      output.write(decodedString.toCharArray());
+      output.flush();
+      output.close();
+      } catch (java.io.IOException e) {
+        e.printStackTrace();
+        System.exit(1);
+      }
+  }
+
+
   public static void main(String[] args){
     if (args.length < 2) {
       System.out.println("Usage: Decode [-c CANONICAL_TREE_FILE] SOURCEFILE TARGETFILE");
@@ -69,5 +109,8 @@ class Decode{
     }
     byte[] input = read(args[0]);
     char[] tree = decodeTree(input);
+    String output = decodeString(input, tree);
+    System.out.println(output);
+    write(args[1], output);
   }
 }
