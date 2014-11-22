@@ -20,7 +20,8 @@ class Decode{
   }
 
   static char[] decodeTree(byte[] input){
-    char[] tree = new char[(int)Math.pow((double)2, (double)input[2] + 1) - 1];
+    char[] tree = new char[(int)Math.pow((double)2, (double)input[2] + 1)];
+    System.out.println(tree.length);
     String[] storage = new String[input[2] + 1];
     Arrays.fill(storage, "");
     for(int i = 1; i < input[0] * 2 + 1; i = i + 2){
@@ -29,15 +30,15 @@ class Decode{
       storage[code_len] = storage[code_len] + val;
     }
 
-    System.out.println(Arrays.toString(storage));
+    //System.out.println(Arrays.toString(storage));
 
     int code = 0;
     for (int i = storage.length - 1; i > 0; i--){
       String s = storage[i];
       if(s != ""){
-        System.out.println(Arrays.toString(s.toCharArray()));
+        //System.out.println(Arrays.toString(s.toCharArray()));
         for(char c : s.toCharArray()){
-          System.out.println(code);
+          //System.out.println(code);
           int index = 0;
           int temp = code;
           int mask = (1 << (i - 1));
@@ -57,14 +58,16 @@ class Decode{
       code += 1;
       code = code >> 1;
     }
-    System.out.println(Arrays.toString(tree));
+    //System.out.println(Arrays.toString(tree));
     return tree;
   }
 
 
-  static String decodeString(byte[] input, char[] tree){
+  static char[] decodeString(byte[] input, char[] tree){
     int index = 2 * input[0] + 1;
-    String output = "";
+    char[] output = new char[ (input.length - input[0]) * (input[2] - 1) ];
+    System.out.println(output.length);
+    int output_index = 0;
     int mask = (1 << 7);
     int tree_index = 0;
     while (index < input.length){
@@ -76,23 +79,26 @@ class Decode{
         else{
           tree_index = 2 * tree_index + 2;
         }
+        if(tree_index > tree.length) break;
         if(tree[tree_index] != '\0'){
-          output = output + tree[tree_index];
-          System.out.println("ADDED TO STRING: " + output);
+          output[output_index] = tree[tree_index];
+          //System.out.println("ADDED TO STRING: " + output);
+          output_index++;
           tree_index = 0;
         }
         b = (byte)(b << 1);
       }
       index++;
     }
-    return output;
+    //System.out.println(Arrays.toString(Arrays.copyOfRange(output, 0, output_index) ));
+    return Arrays.copyOfRange(output, 0, output_index);
   }
 
 
-  static void write(String filename, String decodedString){
+  static void write(String filename, char[] decodedString){
     try {
       PrintWriter output = new PrintWriter(filename);
-      output.write(decodedString.toCharArray());
+      output.write(decodedString);
       output.flush();
       output.close();
       } catch (java.io.IOException e) {
@@ -109,8 +115,9 @@ class Decode{
     }
     byte[] input = read(args[0]);
     char[] tree = decodeTree(input);
-    String output = decodeString(input, tree);
-    System.out.println(output);
+    System.out.println("Starting Decoding");
+    char[] output = decodeString(input, tree);
+    //System.out.println(output);
     write(args[1], output);
   }
 }
