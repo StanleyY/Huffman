@@ -19,7 +19,7 @@ class Decode{
     return null;
   }
 
-  static void decodeTree(byte[] input){
+  static char[] decodeTree(byte[] input){
     char[] tree = new char[(int)Math.pow((double)2, (double)input[2] + 1) - 1];
     String[] storage = new String[input[2] + 1];
     Arrays.fill(storage, "");
@@ -61,12 +61,13 @@ class Decode{
     return tree;
   }
 
+
   public static void main(String[] args){
     if (args.length < 2) {
       System.out.println("Usage: Decode [-c CANONICAL_TREE_FILE] SOURCEFILE TARGETFILE");
       System.exit(1);
     }
     byte[] input = read(args[0]);
-    decodeTree(input);
+    char[] tree = decodeTree(input);
   }
 }
