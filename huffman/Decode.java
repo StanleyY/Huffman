@@ -21,7 +21,6 @@ class Decode{
 
   static char[] decodeTree(byte[] input){
     char[] tree = new char[(int)Math.pow((double)2, (double)input[2] + 1)];
-    System.out.println(tree.length);
     String[] storage = new String[input[2] + 1];
     Arrays.fill(storage, "");
     for(int i = 1; i < input[0] * 2 + 1; i = i + 2){
@@ -30,15 +29,11 @@ class Decode{
       storage[code_len] = storage[code_len] + val;
     }
 
-    //System.out.println(Arrays.toString(storage));
-
     int code = 0;
     for (int i = storage.length - 1; i > 0; i--){
       String s = storage[i];
       if(s != ""){
-        //System.out.println(Arrays.toString(s.toCharArray()));
         for(char c : s.toCharArray()){
-          //System.out.println(code);
           int index = 0;
           int temp = code;
           int mask = (1 << (i - 1));
@@ -58,7 +53,6 @@ class Decode{
       code += 1;
       code = code >> 1;
     }
-    //System.out.println(Arrays.toString(tree));
     return tree;
   }
 
@@ -66,7 +60,6 @@ class Decode{
   static char[] decodeString(byte[] input, char[] tree){
     int index = 2 * input[0] + 1;
     char[] output = new char[ (input.length - input[0]) * (input[2] - 1) ];
-    System.out.println(output.length);
     int output_index = 0;
     int mask = (1 << 7);
     int tree_index = 0;
@@ -82,7 +75,6 @@ class Decode{
         if(tree_index > tree.length) break;
         if(tree[tree_index] != '\0'){
           output[output_index] = tree[tree_index];
-          //System.out.println("ADDED TO STRING: " + output);
           output_index++;
           tree_index = 0;
         }
@@ -90,7 +82,6 @@ class Decode{
       }
       index++;
     }
-    //System.out.println(Arrays.toString(Arrays.copyOfRange(output, 0, output_index) ));
     return Arrays.copyOfRange(output, 0, output_index);
   }
 
@@ -115,9 +106,7 @@ class Decode{
     }
     byte[] input = read(args[0]);
     char[] tree = decodeTree(input);
-    System.out.println("Starting Decoding");
     char[] output = decodeString(input, tree);
-    //System.out.println(output);
     write(args[1], output);
   }
 }
