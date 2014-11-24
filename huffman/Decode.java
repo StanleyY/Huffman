@@ -5,21 +5,8 @@ import java.io.*;
 import java.util.*;
 
 class Decode{
-  static byte[] read(String filename){
-    try {
-      FileInputStream input = new FileInputStream(filename);
-      byte[] f = new byte[input.available()];
-      input.read(f);
-      input.close();
-      return f;
-    } catch (java.io.IOException e) {
-      e.printStackTrace();
-      System.exit(1);
-    }
-    return null;
-  }
 
-  static char[] decodeTree(byte[] input){
+  static char[] decodeHeader(byte[] input){
     char[] tree = new char[(int)Math.pow((double)2, (double)input[2] + 1)];
     String[] storage = new String[input[2] + 1];
     Arrays.fill(storage, "");
@@ -86,6 +73,21 @@ class Decode{
   }
 
 
+  static byte[] read(String filename){
+    try {
+      FileInputStream input = new FileInputStream(filename);
+      byte[] f = new byte[input.available()];
+      input.read(f);
+      input.close();
+      return f;
+    } catch (java.io.IOException e) {
+      e.printStackTrace();
+      System.exit(1);
+    }
+    return null;
+  }
+
+
   static void write(String filename, char[] decodedString){
     try {
       PrintWriter output = new PrintWriter(filename);
@@ -105,7 +107,7 @@ class Decode{
       System.exit(1);
     }
     byte[] input = read(args[0]);
-    char[] tree = decodeTree(input);
+    char[] tree = decodeHeader(input);
     char[] output = decodeString(input, tree);
     write(args[1], output);
   }
