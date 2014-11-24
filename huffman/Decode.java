@@ -4,8 +4,32 @@ import java.nio.file.*;
 import java.io.*;
 import java.util.*;
 
+/**
+ * Decodes files that were encoded using Huffman Coding
+ *
+ * @author     Stanley Yang
+ * @version    1.0
+ * @since      2014-11-24
+ */
 class Decode{
 
+  /**
+   * Generates a binary tree from the header of a given binary file.
+   * <p>
+   * The second byte will always be EOF, therefore the third byte contains
+   * the height of the tree minus one. The third byte is used to allocate
+   * enough space for the binary tree.
+   * <p>
+   * I use a String[] to sort the characters and their codeword lengths.
+   * The index in the array is their codeword length and I found that the
+   * characters are in lexographical order. This removes the need for me to
+   * do any real sorting and the same result is accomplished by appending to
+   * the end of the String at that index. I would switch to a char[] if I
+   * found that constant String concatenation was too slow.
+   * 
+   * @param input   The encoded binary file.
+   * @return        A canonical Huffman binary tree.
+   */
   static char[] decodeHeader(byte[] input){
     char[] tree = new char[(int)Math.pow((double)2, (double)input[2] + 1)];
     String[] storage = new String[input[2] + 1];
@@ -43,13 +67,25 @@ class Decode{
     return tree;
   }
 
-
-  static char[] decodeString(byte[] input, char[] tree){
+  /**
+   * Generates the original text from the encoded binary file.
+   * <p>
+   * Reads the encoded binary file a byte at a time and then a bit at a
+   * time until it reaches EOF. It uses the canonical Huffman tree generated
+   * using decodeHeader().
+   *
+   * @param input   The encoded binary file
+   * @return        A char[] that is the decoded string.
+   */
+  static char[] decodeString(byte[] input){
     int index = 2 * input[0] + 1;
     char[] output = new char[ (input.length - input[0]) * (input[2] - 1) ];
     int output_index = 0;
     int mask = (1 << 7);
     int tree_index = 0;
+
+    char[] tree = decodeHeader(input);
+
     while (index < input.length){
       byte b = input[index];
       for(int i = 0; i < 8; i++){
@@ -72,7 +108,12 @@ class Decode{
     return Arrays.copyOfRange(output, 0, output_index);
   }
 
-
+  /**
+   * Reads in a given filename and returns those bytes.
+   *
+   * @param filename  The filename or the directory and the filename.
+   * @return          A byte[] containing the contents of the file.
+   */
   static byte[] read(String filename){
     try {
       FileInputStream input = new FileInputStream(filename);
@@ -87,7 +128,12 @@ class Decode{
     return null;
   }
 
-
+  /**
+   * Writes decodedString to a given file.
+   *
+   * @param filename      The filename or directory and filename.
+   * @param decodedString The char[] to be written.
+   */
   static void write(String filename, char[] decodedString){
     try {
       PrintWriter output = new PrintWriter(filename);
@@ -100,15 +146,16 @@ class Decode{
       }
   }
 
-
+  /**
+   *  Executes the program or prints out how to use it.
+   */
   public static void main(String[] args){
     if (args.length < 2) {
       System.out.println("Usage: Decode [-c CANONICAL_TREE_FILE] SOURCEFILE TARGETFILE");
       System.exit(1);
     }
     byte[] input = read(args[0]);
-    char[] tree = decodeHeader(input);
-    char[] output = decodeString(input, tree);
+    char[] output = decodeString(input);
     write(args[1], output);
   }
 }
