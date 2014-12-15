@@ -62,7 +62,6 @@ class Encode{
    */
   public static HashMap<Character, String> generateHuffmanTree(HashMap<Character, Integer> characters){
     PriorityQueue<Node> queue = new PriorityQueue<Node>(characters.size() + characters.size() / 2, new NodeComparator());
-    //System.out.println("queue size " + characters.size());
     Iterator it = characters.entrySet().iterator();
     while (it.hasNext()) {
         Entry pairs = (Entry)it.next();
@@ -73,19 +72,14 @@ class Encode{
     Node x = new Node('\u0000', 1, null, null);
     Node y = queue.poll();
     Node connector = new Node('\u0000', x.freq + y.freq, x, y);
-    //x = queue.poll();
-    //y = queue.poll();
     queue.add(connector);
-    //connector = new Node('\u0000', x.freq + y.freq, x, y);
-    //queue.add(connector);
-
+    
     while(queue.size() > 1){
       x = queue.poll();
       y = queue.poll();
       connector = new Node('\u0000', x.freq + y.freq, x, y);
       queue.add(connector);
     }
-    //System.out.println(maxDepth(queue.peek()));
     return makeCanonical(queue.poll());
   }
 
@@ -115,7 +109,13 @@ class Encode{
   }
 
   /**
-   * Creates the hashmap of chars and their respective codeword.
+   * Creates the hashmap of chars and their respective canonical codeword.
+   * <p>
+   * The process is done in two parts. It first sorts the original optimal tree nodes by their
+   * codeword lengths. Then it rebuilds the tree and keeps track of the path or codeword needed
+   * to get to that character.
+   *
+   * @param root Root node of an optimal huffman tree.
    */
   public static HashMap<Character, String>  makeCanonical(Node root){
     String[] storage = new String[maxDepth(root)];
@@ -128,7 +128,6 @@ class Encode{
       if(i == storage.length - 1) storage[i] = Character.toString('\u0000') + new String(temp);
       else storage[i] = new String(temp);
     }
-    //System.out.println(Arrays.toString(storage));
     char[] tree = new char[(int)Math.pow((double)2, (double)storage.length)];
     HashMap<Character, String> codewords = new HashMap<Character, String>();
     int code = 0;
@@ -248,7 +247,6 @@ class Encode{
       int alphabet_size = characters.size() + 1;
       output.write(alphabet_size);
       HashMap<Character, String> codewords = generateHuffmanTree(characters);
-      //System.out.println(Arrays.toString(tree));
       // Reset stream.
       input.close();
       input = new FileInputStream(input_filename);
