@@ -39,7 +39,7 @@ class Decode{
       int code_len = input[i + 1];
       storage[code_len] = storage[code_len] + val;
     }
-
+    System.out.println(Arrays.toString(storage));
     int code = 0;
     for (int i = storage.length - 1; i > 0; i--){
       String s = storage[i];
@@ -85,7 +85,7 @@ class Decode{
     int tree_index = 0;
 
     char[] tree = decodeHeader(input);
-
+    //System.out.println(Arrays.toString(tree));
     while (index < input.length){
       byte b = input[index];
       for(int i = 0; i < 8; i++){
