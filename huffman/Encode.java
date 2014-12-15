@@ -6,21 +6,26 @@ import java.util.*;
 import java.util.Map.Entry;
 import java.util.Comparator;
 /**
- * Decodes files that were encoded using Huffman Coding
+ * Encodes text files using Huffman Canonical Coding
  *
  * @author     Stanley Yang
  * @version    1.0
- * @since      2014-11-24
+ * @since      2014-12-14
  */
 class Encode{
 
+  /**
+   * Local class used to generate an optimal Huffman Tree.
+   */
   static class Node{
     char character;
     int freq;
-    int depth;
     Node left;
     Node right;
 
+    /**
+     * The only constructor for this Node object.
+     */
     public Node(char c, int f, Node left_node, Node right_node){
       this.character = c;
       this.freq = f;
@@ -31,8 +36,10 @@ class Encode{
 
   static class NodeComparator implements Comparator<Node>{
     /** 
-     * Returns a negative integer if Node a is less than Node b,
-     * zero if equal, positive integer a is greater.
+     * Comparator for PriorityQueue.
+     * <p>
+     * The main comparison is done based on the Node's frequency.
+     * In the case that they are equal, sort by char value.
      */
     @Override
     public int compare(Node a, Node b){
@@ -47,16 +54,12 @@ class Encode{
     }
   }
 
-  public static char getMinValue(HashMap<Character, Integer> characters){
-    Entry<Character, Integer> min = null;
-    for (Entry<Character, Integer> entry : characters.entrySet()) {
-      if (min == null || min.getValue() > entry.getValue()) {
-        min = entry;
-      }
-    }
-    return min.getKey();
-  }
-
+  /**
+   * Generates a hashmap with the Canonical Huffman encoding codewords for each character.
+   * <p>
+   * @param characters  A hashmap of characters as keys with their frequencies as the corresponding values.
+   * @return            Returns a hashmap with characters as keys and their huffman codeword as values.
+   */
   public static HashMap<Character, String> generateHuffmanTree(HashMap<Character, Integer> characters){
     PriorityQueue<Node> queue = new PriorityQueue<Node>(characters.size() + characters.size() / 2, new NodeComparator());
     //System.out.println("queue size " + characters.size());
@@ -86,30 +89,39 @@ class Encode{
     return makeCanonical(queue.poll());
   }
 
+  /**
+   * Finds the max depth of a binary tree.
+   */
   public static int maxDepth(Node root){
     if(root == null) return 0;
     return 1 + Math.max(maxDepth(root.left), maxDepth(root.right));
   }
 
-  public static String depthFinder(String[] storage, Node root, int depth){
-    if(root == null) return "";
-    if(root.character != '\u0000') return storage[depth] += Character.toString(root.character);
+  /**
+   * Search through the tree and place all non-null character nodes into storage.
+   * <p>
+   * storage is a pointer to a String[] with the index referencing the codeword length
+   * of a char.
+   * @param storage A String[]
+   * @param root    Node to be searched
+   * @param depth   The current depth.
+   */
+  public static void depthFinder(String[] storage, Node root, int depth){
+    if(root == null) return;
+    if(root.character != '\u0000') storage[depth] += Character.toString(root.character);
 
-    return depthFinder(storage, root.left, depth + 1) + depthFinder(storage, root.right, depth + 1);
+    depthFinder(storage, root.left, depth + 1);
+    depthFinder(storage, root.right, depth + 1);
   }
 
+  /**
+   * Creates the hashmap of chars and their respective codeword.
+   */
   public static HashMap<Character, String>  makeCanonical(Node root){
-    //char[] nodes = depthFinder(root, 0).toCharArray();
-    //System.out.println(depthFinder(root, 0));
     String[] storage = new String[maxDepth(root)];
     Arrays.fill(storage, "");
     depthFinder(storage, root, 0);
-    /*
-    for(int i = 0; i < nodes.length - 1; i = i+2){
-      System.out.println("FILLING INDEX: " + Character.getNumericValue(nodes[i]) + " " + nodes[i+1]);
-      storage[Character.getNumericValue(nodes[i])] += nodes[i+1];
-    }*/
-
+    
     for(int i = 0; i < storage.length; i++){
       char[] temp = storage[i].toCharArray();
       Arrays.sort(temp);
@@ -151,6 +163,11 @@ class Encode{
     return codewords;
   }
 
+  /**
+   * Creates a hashmap with characters as keys and their frequencies as values.
+   *
+   * @param input A stream to the file to be read.
+   */
   public static HashMap<Character, Integer> countCharacters(FileInputStream input) throws IOException{
     BufferedReader reader = new BufferedReader(new InputStreamReader(input));
     HashMap<Character, Integer> output = new HashMap<Character, Integer>();
@@ -164,6 +181,12 @@ class Encode{
     return output;
   }
 
+  /**
+   *  Writes a header containing the alphabet for a Canonical Huffman tree.
+   *
+   * @param codewords HashMap of characters and their respective codewords.
+   * @param output A stream to the file to be written to.
+   */
   public static void generateHeader(HashMap<Character, String> codewords, FileOutputStream output) throws IOException{
     SortedMap<Character, String> sorted = new TreeMap<Character, String>(codewords);
     for (Map.Entry<Character,String> entry : sorted.entrySet()) {
@@ -172,6 +195,15 @@ class Encode{
     }
   }
 
+  /**
+   * Encodes the given file using the given code words.
+   * <p>
+   * Only writes to the file when the byte string reaches 8 bits long.
+   * 
+   * @param codewords HashMap of characters and their respective codewords.
+   * @param input  The file to be read.
+   * @param output A stream to the file to be written to.
+   */
   public static void encodeFile(HashMap<Character, String> codewords, FileInputStream input, FileOutputStream output) throws IOException{
     generateHeader(codewords, output);
     BufferedReader reader = new BufferedReader(new InputStreamReader(input));
@@ -189,15 +221,12 @@ class Encode{
       else main_byte += temp_byte;
       val = reader.read();
     }
-    //System.out.printf("Pre Final Byte: %s \n", main_byte);
     main_byte += codewords.get('\u0000');
-    //System.out.printf("Added Final Byte: %s \n", main_byte);
     while (main_byte.length() > 8){
         output.write(Integer.parseInt(main_byte.substring(0, 8), 2));
         main_byte = main_byte.substring(8);
     }
     if(main_byte.length() > 0) {
-      //System.out.printf("FINAL BYTE: %s \n", main_byte);
       output.write((Integer.parseInt(main_byte, 2)) << (8 - main_byte.length()));
     }
   }
