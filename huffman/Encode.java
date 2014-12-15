@@ -59,7 +59,7 @@ class Encode{
 
   public static HashMap<Character, String> generateHuffmanTree(HashMap<Character, Integer> characters){
     PriorityQueue<Node> queue = new PriorityQueue<Node>(characters.size() + characters.size() / 2, new NodeComparator());
-    System.out.println("queue size " + characters.size());
+    //System.out.println("queue size " + characters.size());
     Iterator it = characters.entrySet().iterator();
     while (it.hasNext()) {
         Entry pairs = (Entry)it.next();
@@ -82,7 +82,7 @@ class Encode{
       connector = new Node('\u0000', x.freq + y.freq, x, y);
       queue.add(connector);
     }
-    System.out.println(maxDepth(queue.peek()));
+    //System.out.println(maxDepth(queue.peek()));
     return makeCanonical(queue.poll());
   }
 
@@ -116,7 +116,7 @@ class Encode{
       if(i == storage.length - 1) storage[i] = Character.toString('\u0000') + new String(temp);
       else storage[i] = new String(temp);
     }
-    System.out.println(Arrays.toString(storage));
+    //System.out.println(Arrays.toString(storage));
     char[] tree = new char[(int)Math.pow((double)2, (double)storage.length)];
     HashMap<Character, String> codewords = new HashMap<Character, String>();
     int code = 0;
@@ -189,14 +189,16 @@ class Encode{
       else main_byte += temp_byte;
       val = reader.read();
     }
+    //System.out.printf("Pre Final Byte: %s \n", main_byte);
     main_byte += codewords.get('\u0000');
-    if (main_byte.length() >= 8){
-        main_byte += temp_byte;
+    //System.out.printf("Added Final Byte: %s \n", main_byte);
+    while (main_byte.length() > 8){
         output.write(Integer.parseInt(main_byte.substring(0, 8), 2));
         main_byte = main_byte.substring(8);
     }
-    else{
-      output.write(Byte.parseByte(main_byte, 2) << (8 - main_byte.length()));
+    if(main_byte.length() > 0) {
+      //System.out.printf("FINAL BYTE: %s \n", main_byte);
+      output.write((Integer.parseInt(main_byte, 2)) << (8 - main_byte.length()));
     }
   }
 
