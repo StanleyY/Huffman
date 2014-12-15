@@ -57,9 +57,8 @@ class Encode{
     return min.getKey();
   }
 
-  public static char[] generateHuffmanTree(HashMap<Character, Integer> characters){
+  public static HashMap<Character, String> generateHuffmanTree(HashMap<Character, Integer> characters){
     PriorityQueue<Node> queue = new PriorityQueue<Node>(characters.size() + characters.size() / 2, new NodeComparator());
-    System.out.println("queue size " + characters.size());
     Iterator it = characters.entrySet().iterator();
     while (it.hasNext()) {
         Entry pairs = (Entry)it.next();
@@ -70,11 +69,7 @@ class Encode{
     Node x = new Node('\u0000', 1, null, null);
     Node y = queue.poll();
     Node connector = new Node('\u0000', x.freq + y.freq, x, y);
-    //x = queue.poll();
-    //y = queue.poll();
     queue.add(connector);
-    //connector = new Node('\u0000', x.freq + y.freq, x, y);
-    //queue.add(connector);
 
     while(queue.size() > 1){
       x = queue.poll();
@@ -82,7 +77,6 @@ class Encode{
       connector = new Node('\u0000', x.freq + y.freq, x, y);
       queue.add(connector);
     }
-    System.out.println(maxDepth(queue.peek()));
     return makeCanonical(queue.poll());
   }
 
@@ -98,17 +92,11 @@ class Encode{
     return depthFinder(storage, root.left, depth + 1) + depthFinder(storage, root.right, depth + 1);
   }
 
-  public static char[] makeCanonical(Node root){
-    //char[] nodes = depthFinder(root, 0).toCharArray();
-    //System.out.println(depthFinder(root, 0));
+  public static HashMap<Character, String> makeCanonical(Node root){
     String[] storage = new String[maxDepth(root)];
     Arrays.fill(storage, "");
     depthFinder(storage, root, 0);
-    /*
-    for(int i = 0; i < nodes.length - 1; i = i+2){
-      System.out.println("FILLING INDEX: " + Character.getNumericValue(nodes[i]) + " " + nodes[i+1]);
-      storage[Character.getNumericValue(nodes[i])] += nodes[i+1];
-    }*/
+    System.out.println(Arrays.toString(storage));
 
     for(int i = 0; i < storage.length; i++){
       char[] temp = storage[i].toCharArray();
@@ -116,10 +104,11 @@ class Encode{
       if(i == storage.length - 1) storage[i] = Character.toString('\u0000') + new String(temp);
       else storage[i] = new String(temp);
     }
-    System.out.println(Arrays.toString(storage));
     char[] tree = new char[(int)Math.pow((double)2, (double)storage.length)];
 
+    HashMap<Character, String> codewords = new HashMap<Character, String>();
     int code = 0;
+    String codeword = "";
     for (int i = storage.length - 1; i > 0; i--){
       String s = storage[i];
       if(s != ""){
@@ -129,21 +118,25 @@ class Encode{
           int mask = (1 << (i - 1));
           for(int j = 0; j < i; j++){
             if( (((temp & mask) >> (i - 1)) & 1) == 0){
+              codeword += "0";
               index = 2 * index + 1;
             }
             else{
+              codeword += "1";
               index = 2 * index + 2;
             }
             temp = temp << 1;
           }
           tree[index] = c;
+          codewords.put(c, codeword);
+          codeword = "";
           code += 1;
         }
       }
       code += 1;
       code = code >> 1;
     }
-    return tree;
+    return codewords;
   }
 
   public static HashMap<Character, Integer> countCharacters(FileInputStream input) throws IOException{
@@ -159,6 +152,41 @@ class Encode{
     return output;
   }
 
+  public static void generateHeader(HashMap<Character, String> codewords, FileOutputStream output) throws IOException{
+    SortedMap<Character, String> sorted = new TreeMap<Character, String>(codewords);
+    for (Map.Entry<Character,String> entry : sorted.entrySet()) {
+        output.write(entry.getKey());
+        output.write(entry.getValue().length());
+    }
+  }
+
+  public static void encodeFile(HashMap<Character, String> codewords, FileInputStream input, FileOutputStream output) throws IOException{
+    generateHeader(codewords, output);
+    BufferedReader reader = new BufferedReader(new InputStreamReader(input));
+    int val = reader.read();
+    String main_byte = "";
+    String temp_byte = "";
+    while(val != -1){
+      char character = (char)val;
+      temp_byte = codewords.get(character);
+      if (temp_byte.length() + main_byte.length() >= 8){
+        main_byte += temp_byte;
+        output.write(Integer.parseInt(main_byte.substring(0, 8), 2));
+        main_byte = main_byte.substring(8);
+      }
+      else main_byte += temp_byte;
+      val = reader.read();
+    }
+    main_byte += codewords.get('\u0000');
+    if (main_byte.length() >= 8){
+        main_byte += temp_byte;
+        output.write(Integer.parseInt(main_byte.substring(0, 8), 2));
+        main_byte = main_byte.substring(8);
+    }
+    else{
+      output.write(Byte.parseByte(main_byte, 2) << (8 - main_byte.length()));
+    }
+  }
   /**
    *  Executes the program or prints out how to use it.
    */
@@ -174,12 +202,13 @@ class Encode{
       FileOutputStream output = new FileOutputStream(output_filename);
       HashMap<Character, Integer> characters = countCharacters(input);
       int alphabet_size = characters.size() + 1;
-      char[] tree = generateHuffmanTree(characters);
-      //System.out.println(Arrays.toString(tree));
+      output.write(alphabet_size);
+      HashMap<Character, String> codewords = generateHuffmanTree(characters);
+
       // Reset stream.
       input.close();
       input = new FileInputStream(input_filename);
-
+      encodeFile(codewords, input, output);
       input.close();
       output.close();
       } catch (java.io.IOException e) {
